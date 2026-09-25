@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     MAX_DETECTIONS: int = 100
     MAX_UPLOAD_MB: int = 10
     MAX_IMAGE_PIXELS: int = 40_000_000
+    MAX_BATCH_SIZE: int = 8
     POLYGON_EPSILON_PX: float = 1.0
     RATE_LIMIT_SCAN: str = "30/minute"
     RATE_LIMIT_READ: str = "120/minute"

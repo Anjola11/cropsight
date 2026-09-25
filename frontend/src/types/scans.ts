@@ -59,3 +59,26 @@ export interface ModelInfo {
   classes: ModelClass[];
 }
 
+export interface BatchScanItem {
+  id: string;
+  file: File;
+  name: string;
+  previewUrl: string;
+  width: number;
+  height: number;
+  status: 'idle' | 'scanning' | 'done' | 'error';
+  errorMsg?: string;
+  result?: ScanResult;
+}
+
+export interface BatchSummary {
+  total: number;
+  completed: number;
+  failed: number;
+  totalCrops: number;
+  totalWeeds: number;
+  weedRatio: number;
+  classCounts: Record<string, number>;
+}
+
+

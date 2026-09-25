@@ -114,3 +114,60 @@ async def test_analyse_scan_rejects_oversized_file(client, monkeypatch):
     assert "too large" in body["message"].lower()
 
 
+@pytest.mark.asyncio
+async def test_analyse_batch_scans_success(client):
+    img1 = make_dummy_jpeg()
+    img2 = make_dummy_jpeg()
+    files = [
+        ("files", ("photo1.jpg", img1, "image/jpeg")),
+        ("files", ("photo2.jpg", img2, "image/jpeg")),
+    ]
+    r = await client.post("/api/v1/scans/batch", files=files)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["success"] is True
+    data = body["data"]
+    assert data["total"] == 2
+    assert data["successful"] == 2
+    assert len(data["items"]) == 2
+    assert data["items"][0]["success"] is True
+    assert data["items"][1]["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_analyse_batch_scans_exceeds_cap(client, monkeypatch):
+    from src.config import Config
+    monkeypatch.setattr(Config, "MAX_BATCH_SIZE", 2)
+    img = make_dummy_jpeg()
+    files = [
+        ("files", ("p1.jpg", img, "image/jpeg")),
+        ("files", ("p2.jpg", img, "image/jpeg")),
+        ("files", ("p3.jpg", img, "image/jpeg")),
+    ]
+    r = await client.post("/api/v1/scans/batch", files=files)
+    assert r.status_code == 400
+    body = r.json()
+    assert body["success"] is False
+    assert "exceeds maximum limit" in body["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_analyse_batch_scans_handles_mixed_results(client):
+    img = make_dummy_jpeg()
+    files = [
+        ("files", ("valid.jpg", img, "image/jpeg")),
+        ("files", ("bad.txt", b"plain text", "text/plain")),
+    ]
+    r = await client.post("/api/v1/scans/batch", files=files)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["success"] is True
+    data = body["data"]
+    assert data["total"] == 2
+    assert data["successful"] == 1
+    assert data["failed"] == 1
+    assert data["items"][0]["success"] is True
+    assert data["items"][1]["success"] is False
+    assert data["items"][1]["error"] is not None
+
+
